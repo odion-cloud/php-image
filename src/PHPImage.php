@@ -586,6 +586,28 @@ class PHPImage {
 		$this->cleanup();
 	}
 
+	public function download($filename = 'image'){
+		$this->checkQuality();
+		switch($this->type){
+			case IMAGETYPE_GIF:
+				header('Content-Type: image/gif');
+				header('Content-Disposition: attachment; filename="' . $filename . '.gif"');
+				imagegif($this->img, null);
+				break;
+			case IMAGETYPE_PNG:
+				header('Content-Type: image/png');
+				header('Content-Disposition: attachment; filename="' . $filename . '.png"');
+				imagepng($this->img, null, $this->quality);
+				break;
+			default:
+				header('Content-Type: image/jpeg');
+				header('Content-Disposition: attachment; filename="' . $filename . '.jpg"');
+				imagejpeg($this->img, null, $this->quality);
+				break;
+		}
+		$this->cleanup();
+	}
+
 	/**
 	 * Cleanup
 	 */
