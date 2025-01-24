@@ -1094,23 +1094,72 @@ class PHPImage {
 	 * @param String $fontFile
 	 * @return String
 	 */
-	protected function wrap($text, $width=100, $fontSize=12, $angle=0, $fontFile=null){
-		if($fontFile === null){
-			$fontFile = $this->fontFile;
-		}
-		$ret = "";
-		$arr = explode(' ', $text);
-		foreach ($arr as $word){
-			$teststring = $ret . ' ' . $word;
-			$testbox = imageftbbox($fontSize, $angle, $fontFile, $teststring);
-			if ($testbox[2] > $width){
-				$ret .= ($ret == "" ? "" : "\n") . $word;
-			} else {
-				$ret .= ($ret == "" ? "" : ' ') . $word;
-			}
-		}
-		return $ret;
-	}
+	
+	// protected function wrap($text, $width=100, $fontSize=12, $angle=0, $fontFile=null){
+	// 	if($fontFile === null){
+	// 		$fontFile = $this->fontFile;
+	// 	}
+	// 	$ret = "";
+	// 	$arr = explode(' ', $text);
+	// 	foreach ($arr as $word){
+	// 		$teststring = $ret . ' ' . $word;
+	// 		$testbox = imageftbbox($fontSize, $angle, $fontFile, $teststring);
+	// 		if ($testbox[2] > $width){
+	// 			$ret .= ($ret == "" ? "" : "\n") . $word;
+	// 		} else {
+	// 			$ret .= ($ret == "" ? "" : ' ') . $word;
+	// 		}
+	// 	}
+	// 	return $ret;
+	// }
+protected function wrap($text, $width = 100, $fontSize = 12, $angle = 0, $fontFile = null) {
+    if ($fontFile === null) {
+        $fontFile = $this->fontFile;
+    }
+
+    $ret = "";
+    $currentLine = "";
+    $words = preg_split('/(\s+)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE); // Split by spaces while keeping the spaces
+
+    foreach ($words as $word) {
+        $teststring = $currentLine . $word;
+        $testbox = imageftbbox($fontSize, $angle, $fontFile, $teststring);
+
+        if ($testbox[2] > $width) { // If the current line exceeds the width
+            if (trim($currentLine) !== "") { // Add the current line to the result
+                $ret .= ($ret === "" ? "" : "\n") . $currentLine;
+            }
+
+            // If the word itself is too long, break it into chunks
+            while (imageftbbox($fontSize, $angle, $fontFile, $word)[2] > $width) {
+                $chunk = "";
+                for ($i = 0; $i < mb_strlen($word); $i++) {
+                    $testChunk = $chunk . mb_substr($word, $i, 1);
+                    $testbox = imageftbbox($fontSize, $angle, $fontFile, $testChunk);
+
+                    if ($testbox[2] > $width) {
+                        $ret .= ($ret === "" ? "" : "\n") . $chunk;
+                        $chunk = "";
+                    }
+
+                    $chunk .= mb_substr($word, $i, 1);
+                }
+                $word = $chunk;
+            }
+
+            $currentLine = $word; // Start a new line with the remaining part of the word
+        } else {
+            $currentLine .= $word; // Add the word to the current line
+        }
+    }
+
+    // Append the last line
+    if (trim($currentLine) !== "") {
+        $ret .= ($ret === "" ? "" : "\n") . $currentLine;
+    }
+
+    return $ret;
+}
 
 	/**
 	 * Check quality is correct before save
